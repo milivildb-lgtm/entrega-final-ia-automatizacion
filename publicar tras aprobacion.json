@@ -1,0 +1,401 @@
+{
+  "name": "Publicar tras Aprobación - Pipeline Aranceles",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "base": {
+          "__rl": true,
+          "value": "appcQgDfOTgjAAShp",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbllsHXxzr04UnsMB",
+          "mode": "id"
+        },
+        "triggerField": "Ultima modificación"
+      },
+      "id": "trigger1",
+      "name": "Airtable Trigger - Piezas",
+      "type": "n8n-nodes-base.airtableTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        300
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "id",
+              "type": "string",
+              "value": "={{ $json.id }}"
+            },
+            {
+              "id": "2",
+              "name": "Estado",
+              "type": "string",
+              "value": "={{ $json.fields ? $json.fields.Estado : $json.Estado }}"
+            },
+            {
+              "id": "3",
+              "name": "Aprobado",
+              "type": "boolean",
+              "value": "={{ $json.fields ? $json.fields.Aprobado : $json.Aprobado }}"
+            },
+            {
+              "id": "4",
+              "name": "Comitente",
+              "type": "string",
+              "value": "={{ $json.fields ? $json.fields.Comitente : $json.Comitente }}"
+            },
+            {
+              "id": "5",
+              "name": "Contenido_generado",
+              "type": "string",
+              "value": "={{ $json.fields ? $json.fields['Contenido generado'] : $json['Contenido generado'] }}"
+            }
+          ]
+        }
+      },
+      "id": "normalizar",
+      "name": "Normalizar datos",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        420,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.Estado }}",
+              "rightValue": "En revision",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.Aprobado }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ifAprobado",
+      "name": "HITL: Solo si En revision + Aprobado",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        640,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "text": "=📢 *Pieza aprobada y publicada*\n*Comitente:* {{ $json.Comitente }}\n*Contenido:*\n{{ $json.Contenido_generado }}",
+        "otherOptions": {},
+        "onError": "continueErrorOutput"
+      },
+      "id": "slackPublicar",
+      "name": "Slack: Publicar",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        860,
+        220
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "",
+          "name": "Slack account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appcQgDfOTgjAAShp",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbllsHXxzr04UnsMB",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Normalizar datos').item.json.id }}",
+            "Estado": "Publicado",
+            "Fecha de la ultima ejecución": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "type": "string",
+              "required": true,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "type": "string",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": false,
+              "display": true
+            },
+            {
+              "id": "Fecha de la ultima ejecución",
+              "displayName": "Fecha de la ultima ejecución",
+              "type": "string",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": false,
+              "display": true
+            }
+          ],
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {},
+        "onError": "continueErrorOutput"
+      },
+      "id": "updatePublicado",
+      "name": "Actualizar pieza (Publicado)",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        1080,
+        220
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "",
+          "name": "Airtable account"
+        }
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "appcQgDfOTgjAAShp",
+          "mode": "id"
+        },
+        "table": {
+          "__rl": true,
+          "value": "tbllsHXxzr04UnsMB",
+          "mode": "id"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Normalizar datos').item.json.id }}",
+            "Estado": "Rechazado"
+          },
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "type": "string",
+              "required": true,
+              "defaultMatch": true,
+              "canBeUsedToMatch": true,
+              "display": true
+            },
+            {
+              "id": "Estado",
+              "displayName": "Estado",
+              "type": "string",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": false,
+              "display": true
+            }
+          ],
+          "matchingColumns": [
+            "id"
+          ]
+        },
+        "options": {}
+      },
+      "id": "marcarError",
+      "name": "Marcar Error en Airtable",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.1,
+      "position": [
+        860,
+        480
+      ],
+      "credentials": {
+        "airtableTokenApi": {
+          "id": "",
+          "name": "Airtable account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "list",
+          "value": ""
+        },
+        "text": "=⚠️ *Error publicando pieza de contenido*\n*Comitente:* {{ $('Normalizar datos').item.json.Comitente }}\n*ID:* {{ $('Normalizar datos').item.json.id }}\nRevisar manualmente en Airtable — falló el posteo en Slack o la actualización del registro.",
+        "otherOptions": {}
+      },
+      "id": "slackAlertaError",
+      "name": "Slack: Alerta de error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [
+        1080,
+        480
+      ],
+      "credentials": {
+        "slackApi": {
+          "id": "",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Airtable Trigger - Piezas": {
+      "main": [
+        [
+          {
+            "node": "Normalizar datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalizar datos": {
+      "main": [
+        [
+          {
+            "node": "HITL: Solo si En revision + Aprobado",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HITL: Solo si En revision + Aprobado": {
+      "main": [
+        [
+          {
+            "node": "Slack: Publicar",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Slack: Publicar": {
+      "main": [
+        [
+          {
+            "node": "Actualizar pieza (Publicado)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Marcar Error en Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Actualizar pieza (Publicado)": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Marcar Error en Airtable",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Marcar Error en Airtable": {
+      "main": [
+        [
+          {
+            "node": "Slack: Alerta de error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "instanceId": ""
+  }
+}

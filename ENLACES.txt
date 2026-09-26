@@ -1,0 +1,25 @@
+ENLACES OBLIGATORIOS - Entrega Final IA Automatización
+Milagros Vilches
+
+------------------------------------------------------------
+BASE DE DATOS EN MODO LECTURA (Airtable)
+------------------------------------------------------------
+
+Tabla "Piezas" (centro de comando / dashboard de control),
+agrupada por Estado y con la tasa de errores en la barra de resumen:
+https://airtable.com/appcQgDfOTgjAAShp/shrsHOxgQbrL1XaVB
+
+Tabla "Base de Conocimiento" (fuente de contexto RAG):
+https://airtable.com/appcQgDfOTgjAAShp/shrIidx9dYyfyZU19
+
+------------------------------------------------------------
+DASHBOARD DE CONTROL (KPIs y tasa de errores)
+------------------------------------------------------------
+El dashboard corresponde a la vista pública de la tabla "Piezas"
+(primer enlace de arriba). Muestra: piezas procesadas, tasa de
+errores, piezas por estado y por tipo de operación.
+
+Nota: la publicación web de páginas de Interfaz de Airtable
+requiere plan pago, por lo que el panel de control se entrega
+como Shared View de la tabla, con la captura del panel con
+gráficos incluida en el PDF (sección 5) y en las evidencias.
